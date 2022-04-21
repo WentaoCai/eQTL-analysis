@@ -1,21 +1,23 @@
 
-## Animal Genetics and Genomics Analysis
+## eQTL Analysis
 
 
-### Transcriptome analysis
+### Get expression matrix
+
+### genotype imputation
+
+
+### Peer comfound factor
+
+
+
+### Cis-eQTL mapping
 #####[RNA-seq](https://github.com/WentaoCai/RNA-seq/wiki)
 
 
 
-### Genome-wide association study
+### trans-eQTL mapping
 
-### Permutation test for GWAS signals
-
-The Sum-based method for GWAS Signal Enrichment analysis (SumGSE) is a tool to integrate genomic information of biological mechanisms with GWAS summary statistics for complex traits. The sum-based method uses signals of all markers within a pre-defined candidate feature. Briefly, we calculated the following summary statistics for candidate regions. The download and details of SumGSE method could be found [here](https://github.com/WentaoCai/GWAS_enrichment).
-
-### eQTL analysis
-
-**eQTL analysis** and _protocol_ and [here](https://github.com/WentaoCai/eQTL-analysis)
 
 
 
