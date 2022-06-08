@@ -1,6 +1,7 @@
 
 # eQTL Analysis
 
+[Download Script](https://github.com/WentaoCai/eQTL-analysis/) 
 
 ### Mapping Reads
 
@@ -9,7 +10,7 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
     hisat2 -p 4 --dta -x Genome -1 "$i"_1.clean.fq.gz -2 "$i"_2.clean.fq.gz -S "$i".sam
     samtools sort -@ 10 -o "$i".bam "$i".sam
 
-### Get FPKM matrix file
+### Get TPM matrix file
 
     mkdir Expression
     stringtie -p 10 -e -B -G Bos_taurus.ARS-UCD1.2.96.chr.gtf -o "$i".gtf -A ./Expression/"$i".tsv "$i".bam
@@ -26,10 +27,16 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
 
 ### Peer comfound factor
 
+ Genes were selected based on expression thresholds of ≥0.1 TPM in ≥20% of samples
+ 
+ Expression values for each gene should be inverse normal transformed across samples
+ 
+ 
+
 
 
 ### Cis-eQTL mapping
-#####[RNA-seq](https://github.com/WentaoCai/RNA-seq/wiki)
+
 
 
 
@@ -38,6 +45,10 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
 
 
 
+
+
+
+
 ### Support or Contact
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Any question please [contact me](https://github.com/WentaoCai)
