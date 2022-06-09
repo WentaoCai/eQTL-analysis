@@ -31,7 +31,7 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
  
     library("peer")
     library("preprocessCore")
-    TPM_tmp0<-read.table("227.gene.expression.tpm.txt",header=T)
+    TPM_tmp0<-read.table("120.gene.expression.tpm.txt",header=T)
     row.names(TPM_tmp0)<-TPM_tmp0$ID
     TPM_tmp0<-TPM_tmp0[,-1]
     #expr=subset(TPM_tmp0,rownames(TPM_tmp0)%in%ccm_pca$sample.id)
@@ -67,16 +67,28 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
     plot(1.0 / Alpha,xlab="Factors", ylab="Factor relevance", main="")
     dev.off()
     factors
-    write.table(factors ,"227.peer.covariance.txt",sep="\t",row.names=T,quote =FALSE)
-    write.table(expr_matrix00_qn_ind ,"227.expression.qn_ind.txt",sep="\t",row.names=T,quote =FALSE)
+    write.table(factors ,"120.peer.covariance.txt",sep="\t",row.names=T,quote =FALSE)
+    write.table(expr_matrix00_qn_ind ,"120.expression.qn_ind.txt",sep="\t",row.names=T,quote =FALSE)
 
  
- 
-
-
-
 ### Cis-eQTL mapping
 
+#### Permutation    
+    #!/usr/bin/bash
+    for j in $(seq 1 50);
+    do
+    fastQTL.static --vcf 227HD.imputated_QC.vcf.gz --bed 227.expression.qn_ind.29.sort1.txt.gz --cov 227covariate.txt.gz --permute 1000 10000 --normal --out ./Permutation/227imputated.permutation_withage.chunk${j}.txt.gz --chunk $j 50&
+    done
+    wait
+
+
+#### Nominal    
+    #!/usr/bin/bash
+    for j in $(seq 1 50);
+    do
+    fastQTL.static --vcf 227HD.imputated_QC.vcf.gz --bed 227.expression.qn_ind.29.sort1.txt.gz --cov 227covariate.txt.gz  --normal --out ./Nominal/227imputated.nominals.withage.chunk${j}.txt.gz --chunk $j 50&
+    done
+    wait
 
 
 
