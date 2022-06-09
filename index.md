@@ -77,28 +77,106 @@ You can choose either HISAT2 or [STAR](https://github.com/WentaoCai/RNA-seq/wiki
     #!/usr/bin/bash
     for j in $(seq 1 50);
     do
-    fastQTL.static --vcf 227HD.imputated_QC.vcf.gz --bed 227.expression.qn_ind.29.sort1.txt.gz --cov 227covariate.txt.gz --permute 1000 10000 --normal --out ./Permutation/227imputated.permutation_withage.chunk${j}.txt.gz --chunk $j 50&
+    fastQTL.static --vcf 120.imputated_QC.vcf.gz --bed 120.expression.qn_ind.29.sort1.txt.gz --cov 120covariate.txt.gz --permute 1000 10000 --normal --out ./Permutation/120.permutation.chunk${j}.txt.gz --chunk $j 50&
     done
     wait
-
+    
+    cat 120.permutation.chunk*.txt.gz>120.permutation.txt.gz
 
 #### Nominal    
     #!/usr/bin/bash
     for j in $(seq 1 50);
     do
-    fastQTL.static --vcf 227HD.imputated_QC.vcf.gz --bed 227.expression.qn_ind.29.sort1.txt.gz --cov 227covariate.txt.gz  --normal --out ./Nominal/227imputated.nominals.withage.chunk${j}.txt.gz --chunk $j 50&
+    fastQTL.static --vcf 120.imputated_QC.vcf.gz --bed 120.expression.qn_ind.29.sort1.txt.gz --cov 120covariate.txt.gz  --normal --out ./Nominal/120.nominals.chunk${j}.txt.gz --chunk $j 50&
     done
     wait
+    
+    cat 120.nominals.chunk*.txt.gz>120.nominals.txt.gz
 
+#### Combine Permutation and Nominal to get the final cis-eQTL results
 
+    data = read.table("120.permutation.txt.gz", header=FALSE, stringsAsFactors=FALSE)
+    colnames(data) = c("pid", "nvar", "shape1", "shape2", "dummy", "sid", "dist", "npval","effects", "ppval", "bpval")
+    data$bh = p.adjust(data$bpval, method="fdr")
+    write.table(data[which(data$bh <= 0.05), ], "120.permutations.fdr.txt", quote=F, row.names=F, col.names=T)
+    data = data[which(!is.na(data[, 10])),]
+    set0 = data[which(data$bh <= 0.05),] 
+    set1 = data[which(data$bh > 0.05),]
+    pthreshold = (sort(set1$bpval)[1] - sort(-1.0 * set0$bpval)[1]) / 2
+    data$nthresholds = qbeta(pthreshold, data$shape1, data$shape2, ncp = 0, lower.tail = TRUE, log.p = FALSE)
+    nom=read.table("120.nominals.txt.gz",header=F,stringsAsFactors=F)
+    colnames(nom)<-c("pid","sid","dst","pval")
+    nom$threshold<-data$nthresholds[match(nom$pid,data$pid)]
+    write.table(nom[nom$pval<nom$threshold,],"120.nominals.sigs.txt",quote=FALSE,row.names=FALSE,col.names=FALSE,sep="\t")
 
 ### trans-eQTL mapping
+    library("MatrixEQTL")
+    useModel = modelLINEAR; # modelANOVA or modelLINEAR or modelLINEAR_CROSS
+    output_file_name = tempfile();
+    pvOutputThreshold = 1e-2;
+    errorCovariance = numeric();
 
+    output_file_name_cis = tempfile();
+    output_file_name_tra = tempfile();
 
+    pvOutputThreshold_cis = 0.05;
+    pvOutputThreshold_tra = 0.0001;
+    cisDist = 1e6;
 
+    snpspos<-read.table(snp_pos, header = F, stringsAsFactors = FALSE);
+    genepos = read.table(gene_pos, header = F, stringsAsFactors = FALSE);
 
+    snps = SlicedData$new();
+    snps
+    snps$fileDelimiter = "\t";      # the TAB character
+    snps$fileOmitCharacters = "NA"; # denote missing values;
+    snps$fileSkipRows = 1;          # one row of column labels
+    snps$fileSkipColumns = 1;       # one column of row labels
+    snps$fileSliceSize = 200000;      # read file in pieces of 2,000 rows
+    snps$LoadFile( Genotype);
 
+    gene = SlicedData$new();
+    gene$fileDelimiter = "\t";      # the TAB character
+    gene$fileOmitCharacters = "NA"; # denote missing values;
+    gene$fileSkipRows = 1;          # one row of column labels
+    gene$fileSkipColumns = 1;       # one column of row labels
+    gene$fileSliceSize = 2000;      # read file in slices of 2,000 rows
+    gene$LoadFile(Phnotype);
 
+    ## Load covariates
+
+    cvrt = SlicedData$new();
+    cvrt$fileDelimiter = "\t";      # the TAB character
+    cvrt$fileOmitCharacters = "NA"; # denote missing values;
+    cvrt$fileSkipRows = 1;          # one row of column labels
+    cvrt$fileSkipColumns = 1;       # one column of row labels
+    if(length(Covariate)>0) {
+      cvrt$LoadFile(Covariate);
+    }
+
+    me = Matrix_eQTL_main(
+      snps = snps,
+      gene = gene,
+      cvrt = cvrt,
+      output_file_name     = output_file_name_tra,
+      pvOutputThreshold     = pvOutputThreshold_tra,
+      useModel = useModel,
+      errorCovariance = errorCovariance,
+      verbose = TRUE,
+      output_file_name.cis = output_file_name_cis,
+      pvOutputThreshold.cis = pvOutputThreshold_cis,
+      snpspos = snpspos,
+      genepos = genepos,
+      cisDist = cisDist,
+      pvalue.hist = "qqplot",
+      min.pv.by.genesnp = FALSE,
+      noFDRsaveMemory = FALSE);
+
+    unlink(output_file_name_tra);
+    sum(me$trans$eqtls$FDR< 0.05, na.rm=TRUE)
+    TransSig <- subset(me$trans$eqtls, FDR < 0.05)
+    TransOrdered <- TransSig[order(TransSig$FDR),]
+    write.csv(TransOrdered,paste(Phnotype,".trans.csv",sep = ""))
 
 
 ### Support or Contact
